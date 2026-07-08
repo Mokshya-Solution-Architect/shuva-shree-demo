@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_shuva_pack_type_user,shuva.pack.type user,model_shuva_pack_type,base.group_user,1,1,1,1
+access_shuva_return_reason_user,shuva.return.reason user,model_shuva_return_reason,base.group_user,1,1,1,1
+access_shuva_pack_lot_wizard_user,shuva.pack.lot.wizard user,model_shuva_pack_lot_wizard,base.group_user,1,1,1,1
+access_shuva_pack_lot_wizard_line_user,shuva.pack.lot.wizard.line user,model_shuva_pack_lot_wizard_line,base.group_user,1,1,1,1
+access_shuva_mrp_finished_pack_wizard_user,shuva.mrp.finished.pack.wizard user,model_shuva_mrp_finished_pack_wizard,base.group_user,1,1,1,1
+access_shuva_barcode_history_report_user,shuva.barcode.history.report user,model_shuva_barcode_history_report,base.group_user,1,0,0,0
+access_shuva_mrp_variance_report_user,shuva.mrp.variance.report user,model_shuva_mrp_variance_report,base.group_user,1,0,0,0

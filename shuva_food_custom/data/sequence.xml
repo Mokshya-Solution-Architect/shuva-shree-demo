@@ -1,0 +1,9 @@
+<odoo>
+    <record id="seq_shuva_pack_barcode" model="ir.sequence">
+        <field name="name">Shuva Pack Barcode</field>
+        <field name="code">shuva.pack.barcode</field>
+        <field name="prefix">PK%(y)s%(month)s</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

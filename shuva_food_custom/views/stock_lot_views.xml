@@ -1,0 +1,33 @@
+<odoo>
+    <record id="view_stock_lot_form_shuva" model="ir.ui.view">
+        <field name="name">stock.lot.form.shuva</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="inside">
+                <group string="Shuva Pack Barcode">
+                    <field name="shuva_pack_barcode"/>
+                    <field name="shuva_pack_type_id"/>
+                    <field name="shuva_pack_qty"/>
+                    <field name="shuva_alt_qty"/>
+                    <field name="shuva_supplier_id"/>
+                    <field name="shuva_purchase_id"/>
+                    <field name="shuva_mrp_production_id"/>
+                    <field name="shuva_received_date"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_stock_lot_tree_shuva" model="ir.ui.view">
+        <field name="name">stock.lot.list.shuva</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="shuva_pack_barcode"/>
+                <field name="shuva_pack_type_id"/>
+                <field name="shuva_pack_qty"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

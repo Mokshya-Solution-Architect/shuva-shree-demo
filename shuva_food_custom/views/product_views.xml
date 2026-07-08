@@ -1,0 +1,18 @@
+<odoo>
+    <record id="product_template_form_view_shuva" model="ir.ui.view">
+        <field name="name">product.template.form.shuva.food</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='inventory']" position="inside">
+                <group string="Shuva Pack Barcode">
+                    <field name="shuva_requires_pack_lot"/>
+                    <field name="shuva_default_pack_type_id"/>
+                    <field name="shuva_default_pack_qty"/>
+                    <field name="shuva_pos_pack_scan_qty"/>
+                    <field name="shuva_average_qty_per_pack"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
