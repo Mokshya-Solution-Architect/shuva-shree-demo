@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!--
+            Inherit native lot label only.
+            - Same cell + default barcode (design the user liked)
+            - 1 per page on 50x25
+            - Center via padding inside border-box (NOT flex / NOT a second wrapper)
+            - Cell stays 43x19 so it cannot overflow the page (no text/barcode split)
+        -->
+        <template id="report_lot_label_sticker_sheet" inherit_id="stock.report_lot_label" priority="99">
+            <xpath expr="//t[@t-set='nRows']" position="replace">
+                <t t-set="nRows" t-value="1"/>
+            </xpath>
+            <xpath expr="//t[@t-set='nCols']" position="replace">
+                <t t-set="nCols" t-value="1"/>
+            </xpath>
+            <!--
+                50x25 border-box with padding (3mm / 3.5mm) leaves exactly 43x19
+                for the native cell → centered, no overflow, no second page.
+            -->
+            <xpath expr="//div[hasclass('o_label_sheet')]" position="attributes">
+                <attribute name="class" add="o_ss_lot_sticker_sheet" separator=" "/>
+                <attribute name="t-att-style">'box-sizing: border-box; width: 50mm; height: 25mm; padding: 3mm 3.5mm; margin: 0; overflow: hidden; page-break-after: always;'</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('o_label_sheet')]//td/div" position="attributes">
+                <attribute name="t-att-style">'position:relative; width:43mm; height:19mm; border: 1px solid %s; box-sizing: border-box;' % (o.env.user.company_id.primary_color or 'black')</attribute>
+            </xpath>
+        </template>
+
+        <record id="stock.action_report_lot_label" model="ir.actions.report">
+            <field name="name">Lot/Serial Number (PDF)</field>
+            <field name="report_name">stock.report_lot_label</field>
+            <field name="report_file">stock.report_lot_label</field>
+            <field name="paperformat_id" ref="msa_lot_label_sticker.paperformat_lot_label_sticker"/>
+            <field name="binding_model_id" ref="stock.model_stock_lot"/>
+        </record>
+
+        <delete model="ir.actions.report"
+                search="[('name', '=', 'Lot/Serial Number Sticker (PDF)')]"/>
+
+    </data>
+</odoo>

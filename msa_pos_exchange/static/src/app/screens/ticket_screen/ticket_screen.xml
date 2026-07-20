@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="ss_pos_exchange.TicketScreen" t-inherit="point_of_sale.TicketScreen" t-inherit-mode="extension">
+        <xpath expr="//ActionpadWidget" position="before">
+            <button class="btn btn-secondary btn-lg mb-2 w-100"
+                    t-on-click="() => this.onClickExchange()">
+                <i class="fa fa-exchange me-1"/>Exchange
+            </button>
+        </xpath>
+    </t>
+</templates>

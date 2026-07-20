@@ -1,9 +1,0 @@
-<odoo>
-    <record id="view_shuva_mrp_finished_pack_wizard_form" model="ir.ui.view">
-        <field name="name">shuva.mrp.finished.pack.wizard.form</field><field name="model">shuva.mrp.finished.pack.wizard</field>
-        <field name="arch" type="xml"><form string="Generate Finished Pack Barcodes">
-            <group><field name="production_id" readonly="1"/><field name="product_id"/><field name="pack_type_id"/><field name="total_qty"/><field name="qty_per_pack"/><field name="pack_count"/></group>
-            <footer><button name="action_generate" type="object" string="Generate Finished Lots" class="btn-primary"/><button string="Cancel" special="cancel"/></footer>
-        </form></field>
-    </record>
-</odoo>

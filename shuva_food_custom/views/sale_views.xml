@@ -1,3 +1,0 @@
-<odoo>
-    <record id="sale_order_form_shuva_alt" model="ir.ui.view"><field name="name">sale.order.form.shuva.alt</field><field name="model">sale.order</field><field name="inherit_id" ref="sale.view_order_form"/><field name="arch" type="xml"><xpath expr="//field[@name='order_line']//field[@name='product_uom_qty']" position="after"><field name="shuva_alt_qty"/><field name="shuva_pack_type_id"/><field name="shuva_pack_note" optional="hide"/></xpath></field></record>
-</odoo>

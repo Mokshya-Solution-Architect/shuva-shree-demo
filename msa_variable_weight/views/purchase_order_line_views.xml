@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Add received_base_uom_qty after qty_received in PO form's embedded order lines -->
+        <record id="purchase_order_form_inherit_base_uom" model="ir.ui.view">
+            <field name="name">purchase.order.form.inherit.base.uom</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='qty_received']" position="after">
+                    <field name="received_base_uom_qty" optional="show"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

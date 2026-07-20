@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <function model="stock.warehouse" name="_ss_ensure_exchange_locations">
+        <value model="stock.warehouse" eval="obj().search([])"/>
+    </function>
+    <function model="pos.config" name="_ss_configure_exchange_defaults">
+        <value model="pos.config" eval="obj().search([])"/>
+    </function>
+</odoo>

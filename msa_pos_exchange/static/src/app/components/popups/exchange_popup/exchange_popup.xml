@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="ss_pos_exchange.ExchangePopup">
+        <Dialog title.translate="Exchange" size="'md'">
+            <div class="ss-exchange-popup d-flex flex-column gap-3">
+                <div class="alert alert-info mb-0 py-2" t-esc="state.statusHint"/>
+                <div t-if="state.error" class="alert alert-danger mb-0" t-esc="state.error"/>
+
+                <!-- Origin -->
+                <div>
+                    <label class="form-label fw-bold">1. Returned item</label>
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control form-control-lg"
+                               t-model="state.originLotName"
+                               t-ref="originLot"
+                               t-on-keydown="onOriginEnter"
+                               t-att-readonly="state.busy"
+                               placeholder="Scan returned barcode"/>
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                t-if="state.productId"
+                                t-on-click="resetOrigin">
+                            Clear
+                        </button>
+                    </div>
+                    <div t-if="state.productName" class="form-text fs-5">
+                        <strong t-esc="state.productName"/>
+                        <t t-if="state.uomName"> · <t t-esc="state.uomName"/></t>
+                        <t t-if="state.originOrderName"> · <t t-esc="state.originOrderName"/></t>
+                    </div>
+                </div>
+
+                <!-- Reason -->
+                <div t-if="state.productId">
+                    <label class="form-label fw-bold">2. Reason</label>
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-lg flex-fill py-3"
+                                t-att-class="state.reason === 'expired' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onReasonSelect('expired')"
+                                t-att-disabled="state.busy">
+                            Expired
+                            <div class="small fw-normal opacity-75">All scrap</div>
+                        </button>
+                        <button type="button"
+                                class="btn btn-lg flex-fill py-3"
+                                t-att-class="state.reason === 'packaging_damage' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onReasonSelect('packaging_damage')"
+                                t-att-disabled="state.busy">
+                            Packaging damage
+                            <div class="small fw-normal opacity-75">Rework + scrap</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Qty only for lot + packaging -->
+                <div t-if="showQtyFields" class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Returned</label>
+                        <input type="number" class="form-control form-control-lg" min="0" step="any"
+                               t-att-value="state.returnedQty"
+                               t-on-input="onReturnedQtyInput"/>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Reusable</label>
+                        <input type="number" class="form-control form-control-lg" min="0" step="any"
+                               t-att-value="state.reusableQty"
+                               t-on-input="onReusableQtyInput"/>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Scrap</label>
+                        <input type="number" class="form-control form-control-lg" t-att-value="scrapQty" readonly="1"/>
+                    </div>
+                </div>
+
+                <!-- Replacement -->
+                <div t-if="state.productId">
+                    <label class="form-label fw-bold">3. Replacement from stock</label>
+                    <input type="text"
+                           class="form-control form-control-lg"
+                           t-model="state.replacementLotName"
+                           t-ref="replacementLot"
+                           t-on-keydown="onReplacementEnter"
+                           t-att-readonly="state.busy"
+                           placeholder="Scan good stock barcode"/>
+                    <div t-if="state.availableFgQty" class="form-text">
+                        Available in FG: <t t-esc="state.availableFgQty"/>
+                    </div>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary btn-lg lh-lg"
+                        t-att-disabled="!canConfirm"
+                        t-on-click="confirm">
+                    Confirm Exchange
+                </button>
+                <button class="btn btn-secondary btn-lg lh-lg" t-on-click="cancel">Discard</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

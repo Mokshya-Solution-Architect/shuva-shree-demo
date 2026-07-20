@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_print_lot_sn" model="ir.ui.view">
+        <field name="name">stock.picking.form.print.lot.sn</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <!-- Header: always show when products are lot/serial tracked -->
+            <xpath expr="//header/button[@name='%(stock.act_stock_return_picking)d']" position="before">
+                <button name="action_print_lot_sn_labels"
+                        type="object"
+                        string="Lot/SN Labels"
+                        class="oe_highlight"
+                        groups="stock.group_production_lot"
+                        invisible="not has_tracking"
+                        data-hotkey="l"/>
+            </xpath>
+            <!-- Smart button: next to Traceability / Barcode so it cannot be missed -->
+            <xpath expr="//div[@name='button_box']/button[@name='%(stock.action_stock_report)d']" position="after">
+                <button name="action_print_lot_sn_labels"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-barcode"
+                        groups="stock.group_production_lot"
+                        invisible="not has_tracking">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Lot/SN Labels</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

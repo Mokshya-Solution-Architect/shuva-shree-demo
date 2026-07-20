@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_exchange_list" model="ir.ui.view">
+        <field name="name">pos.exchange.list</field>
+        <field name="model">pos.exchange</field>
+        <field name="arch" type="xml">
+            <list string="POS Exchanges">
+                <field name="name"/>
+                <field name="date_done"/>
+                <field name="session_id"/>
+                <field name="config_id"/>
+                <field name="user_id"/>
+                <field name="partner_id"/>
+                <field name="pos_order_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_exchange_form" model="ir.ui.view">
+        <field name="name">pos.exchange.form</field>
+        <field name="model">pos.exchange</field>
+        <field name="arch" type="xml">
+            <form string="POS Exchange">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="session_id" readonly="state != 'draft'"/>
+                            <field name="config_id"/>
+                            <field name="user_id" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="pos_order_id"/>
+                            <field name="date_done"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lines" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="reason"/>
+                                    <field name="returned_qty"/>
+                                    <field name="reusable_qty"/>
+                                    <field name="scrap_qty"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="origin_lot_id"/>
+                                    <field name="replacement_lot_id"/>
+                                    <field name="origin_order_line_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Stock" name="stock">
+                            <group>
+                                <field name="picking_ids" widget="many2many_tags"/>
+                                <field name="scrap_ids" widget="many2many_tags"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" readonly="state != 'draft'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pos_exchange" model="ir.actions.act_window">
+        <field name="name">POS Exchanges</field>
+        <field name="res_model">pos.exchange</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_pos_exchange"
+              name="Exchanges"
+              parent="point_of_sale.menu_point_of_sale"
+              action="action_pos_exchange"
+              sequence="25"/>
+</odoo>

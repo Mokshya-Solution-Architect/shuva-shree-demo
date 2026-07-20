@@ -1,0 +1,24 @@
+/* Only cancel A4 sheet defaults + container left pad. Do not change cell/barcode. */
+.o_label_sheet.o_ss_lot_sticker_sheet {
+    width: 50mm !important;
+    height: 25mm !important;
+    max-height: 25mm !important;
+    margin: 0 0 0 -16px !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    page-break-after: always !important;
+
+    table {
+        width: 43mm !important;
+        margin: 0 !important;
+        border-collapse: collapse;
+    }
+
+    td {
+        padding: 0 !important;
+    }
+}
+
+.o_label_sheet.o_ss_lot_sticker_sheet:last-child {
+    page-break-after: auto !important;
+}

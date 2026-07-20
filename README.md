@@ -1,1 +1,0 @@
-# shuva-shree-demo
