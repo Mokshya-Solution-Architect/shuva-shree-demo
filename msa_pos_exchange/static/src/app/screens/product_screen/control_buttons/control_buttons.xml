@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
-    <t t-name="ss_pos_exchange.ControlButtons" t-inherit="point_of_sale.ControlButtons" t-inherit-mode="extension">
+    <t t-name="msa_pos_exchange.ControlButtons" t-inherit="point_of_sale.ControlButtons" t-inherit-mode="extension">
         <!-- Always-visible on desktop product screen -->
         <xpath expr="//SelectPartnerButton" position="after">
             <button t-if="!props.showRemainingButtons and this.pos.cashier._role != 'minimal'"

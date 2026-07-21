@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="point_of_sale.Orderline"
+       t-inherit="point_of_sale.Orderline"
+       t-inherit-mode="extension">
+
+        <xpath expr="//span[hasclass('qty')]" position="after">
+            <UomInlineButton line="line"/>
+        </xpath>
+
+        <xpath expr="//div[hasclass('line-details')]" position="inside">
+            <RemoveLineButton t-if="props.mode === 'display'" line="line"/>
+        </xpath>
+
+    </t>
+
+</templates>

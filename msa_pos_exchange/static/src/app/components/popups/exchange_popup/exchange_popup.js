@@ -13,7 +13,7 @@ import { useBarcodeReader } from "@point_of_sale/app/hooks/barcode_reader_hook";
  * Flow: scan returned → tap reason → scan replacement → confirm (auto for serial).
  */
 export class ExchangePopup extends Component {
-    static template = "ss_pos_exchange.ExchangePopup";
+    static template = "msa_pos_exchange.ExchangePopup";
     static components = { Dialog };
     static props = {
         close: Function,

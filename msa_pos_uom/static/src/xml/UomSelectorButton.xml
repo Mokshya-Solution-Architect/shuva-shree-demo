@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="msa_pos_uom.RemoveLineButton">
+        <button
+            class="btn btn-sm btn-link text-danger p-0 ms-2 lh-1"
+            style="font-size: 1rem; opacity: 0.6;"
+            t-on-click="onClick"
+            title="Remove line">
+            <i class="fa fa-times"/>
+        </button>
+    </t>
+
+    <t t-name="msa_pos_uom.UomInlineButton">
+        <button
+            t-if="isClickable"
+            class="btn btn-sm btn-outline-secondary px-1 py-0 ms-1 lh-1"
+            style="font-size: 75%; vertical-align: middle;"
+            t-on-click="onClick"
+            t-att-title="'Change unit of measure'">
+            <t t-esc="currentUomName"/>
+        </button>
+        <small
+            t-else=""
+            class="text-muted px-1 fw-normal"
+            t-esc="currentUomName"/>
+    </t>
+
+    <t t-name="msa_pos_uom.UomSelectorButton">
+        <button
+            t-if="isVisible"
+            t-att-class="props.class"
+            t-on-click="onClick">
+            <i class="fa fa-balance-scale me-1" role="img" aria-label="Unit of Measure" title="Unit of Measure"/>
+            <t t-esc="currentUomName"/>
+        </button>
+    </t>
+
+    <t t-name="point_of_sale.ControlButtons" t-inherit="point_of_sale.ControlButtons" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('control-buttons-modal')]" position="inside">
+            <UomSelectorButton t-if="currentOrder?.getSelectedOrderline()" class="buttonClass"/>
+        </xpath>
+    </t>
+
+</templates>

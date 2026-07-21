@@ -3,7 +3,7 @@
 import { patch } from "@web/core/utils/patch";
 import { TicketScreen } from "@point_of_sale/app/screens/ticket_screen/ticket_screen";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
-import { ExchangePopup } from "@ss_pos_exchange/app/components/popups/exchange_popup/exchange_popup";
+import { ExchangePopup } from "@msa_pos_exchange/app/components/popups/exchange_popup/exchange_popup";
 
 patch(TicketScreen.prototype, {
     async onClickExchange() {

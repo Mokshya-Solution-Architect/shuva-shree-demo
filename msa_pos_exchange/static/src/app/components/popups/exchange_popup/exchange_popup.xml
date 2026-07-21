@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
-    <t t-name="ss_pos_exchange.ExchangePopup">
+    <t t-name="msa_pos_exchange.ExchangePopup">
         <Dialog title.translate="Exchange" size="'md'">
             <div class="ss-exchange-popup d-flex flex-column gap-3">
                 <div class="alert alert-info mb-0 py-2" t-esc="state.statusHint"/>

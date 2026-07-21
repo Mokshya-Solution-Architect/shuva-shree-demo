@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_product_template_form_default_sales_packaging" model="ir.ui.view">
+            <field name="name">product.template.form.default.sales.packaging</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="website_sale.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='upsell']/field[@name='alternative_product_ids']" position="after">
+                    <field name="sales_default_packaging_id"
+                           options="{'no_create': True, 'no_open': True}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_product_template_form_default_purchase_packaging" model="ir.ui.view">
+            <field name="name">product.template.form.default.purchase.packaging</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='purchase']//group[@name='bill']" position="inside">
+                    <separator string="Packaging" colspan="2" groups="uom.group_uom"/>
+                    <field name="purchase_default_packaging_id"
+                           colspan="2"
+                           groups="uom.group_uom"
+                           options="{'no_create': True, 'no_open': True}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_product_product_form_packaging_domain_fix" model="ir.ui.view">
+            <field name="name">product.product.form.packaging.domain.fix</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_normal_form_view"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//field[@name='sales_default_packaging_id']" position="attributes">
+                    <attribute name="domain">[('id', 'in', uom_ids)]</attribute>
+                    <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='purchase_default_packaging_id']" position="attributes">
+                    <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
