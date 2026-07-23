@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Part of MSA Solutions. See LICENSE file for full copyright and licensing details.
 
 import logging
 
@@ -20,7 +19,6 @@ class StockMoveLine(models.Model):
                 if move.picking_id:
                     vals["picking_id"] = move.picking_id.id
         lines = super().create(vals_list)
-        # Defend against native paths that drop picking_id during create.
         orphans = lines.filtered(lambda ml: ml.move_id.picking_id and not ml.picking_id)
         if orphans:
             for ml in orphans:

@@ -12,6 +12,7 @@
         "product",
         "sale_management",
         "purchase",
+        "stock",
         "website_sale",
     ],
     "data": [

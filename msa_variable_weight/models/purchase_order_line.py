@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Part of MSA Solutions. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models
 
@@ -59,7 +58,6 @@ class PurchaseOrderLine(models.Model):
         "product_id.product_tmpl_id.variable_receipt_weight",
     )
     def _compute_qty_received(self):
-        # Extra depends so VRW line-count changes trigger recompute.
         super()._compute_qty_received()
 
     def _prepare_qty_received(self):
@@ -82,7 +80,6 @@ class PurchaseOrderLine(models.Model):
                     and move.origin_returned_move_id._is_dropshipped()
                     and not move._is_dropshipped_returned()
                 ):
-                    # Dropship returned to stock (not supplier): do not double-count.
                     pass
                 elif (
                     move.origin_returned_move_id

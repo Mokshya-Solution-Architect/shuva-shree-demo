@@ -1,5 +1,4 @@
 ﻿# -*- coding: utf-8 -*-
-# Part of MSA Solutions. See LICENSE file for full copyright and licensing details.
 
 import logging
 
@@ -12,10 +11,8 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def action_detailed_operations(self):
-        """Include VRW lines that were created with move_id only (no picking_id)."""
         self.ensure_one()
         action = super().action_detailed_operations()
-        # Native domain is picking_id=self. Also include lines linked only via move.
         action["domain"] = [
             "|",
             ("picking_id", "=", self.id),
@@ -31,7 +28,6 @@ class StockPicking(models.Model):
         return action
 
     def _msa_force_link_move_lines(self):
-        """SQL-level link of orphan move lines back onto the picking."""
         self.ensure_one()
         self.env.cr.execute(
             """

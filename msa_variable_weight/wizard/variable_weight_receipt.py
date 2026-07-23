@@ -1,6 +1,4 @@
 ﻿# -*- coding: utf-8 -*-
-# Part of MSA Solutions. See LICENSE file for full copyright and licensing details.
-
 import logging
 
 from odoo import _, api, fields, models
@@ -39,8 +37,6 @@ class VariableWeightWizard(models.TransientModel):
                 for line in wizard.line_ids)
 
     def _prepare_lines(self):
-        """Create one wizard line per purchase unit (Bora).
-        Default weight = expected kg per unit from the stock move."""
         self.ensure_one()
         _logger.info("=== _prepare_lines: picking=%s (%s) ===",
                      self.picking_id.name, self.picking_id.id)
@@ -66,11 +62,15 @@ class VariableWeightWizard(models.TransientModel):
                              move_uom.name, unit_count,
                              po_line.product_qty)
             else:
-                unit_count = 1
+                if move_uom and move_uom != base_uom:
+                    unit_count = max(1, int(move_uom.round(
+                        move.product_uom_qty, rounding_method="HALF-UP")))
+                else:
+                    unit_count = 1
                 _logger.info("  MOVE id=%s product=%s move_uom=%s"
-                             " unit_count=1 (no PO)",
+                             " unit_count=%d (no PO, derived from move_uom_qty=%s)",
                              move.id, product.display_name,
-                             move_uom.name)
+                             move_uom.name, unit_count, move.product_uom_qty)
             total_kg = move_uom._compute_quantity(
                 move.product_uom_qty, base_uom, round=False)
             default_wt = base_uom.round(
@@ -117,10 +117,6 @@ class VariableWeightWizard(models.TransientModel):
         return name
 
     def action_confirm(self):
-        """Create lots and move lines, convert move to kg.
-        Then close wizard. User clicks Validate on picking manually.
-        Since move lines already have lots, standard Odoo validation
-        will proceed without requiring lot/serial input."""
         self.ensure_one()
         if self.has_errors:
             raise UserError(_("All weights must be positive."))
@@ -144,9 +140,6 @@ class VariableWeightWizard(models.TransientModel):
             _logger.info("    Unlinked %d lines", n_before)
             ml_vals = []
             total_kg = 0.0
-            # Consume one sequence number per created lot.
-            # Next_by_id() advances the counter; generate_lot_names()
-            # only does string manipulation without consuming.
             for wl in wlines.sorted("sequence"):
                 lot_name = self._generate_first_lot_name(product, consume=True)
                 lot = self.env["stock.lot"].create({
@@ -171,17 +164,12 @@ class VariableWeightWizard(models.TransientModel):
             rounded_kg = base_uom.round(total_kg, rounding_method="HALF-UP")
             _logger.info("    total=%s kg", rounded_kg)
 
-            # Set move UoM to kg and demand. Write quantity BEFORE creating
-            # lines so _set_quantity works with existing lines after creation.
-            # (Source: stock/models/stock_move.py line ~2394 - empty move_line_ids
-            #  triggers creation of lot-less lines)
             move.write({
                 "product_uom": base_uom.id,
                 "product_uom_qty": rounded_kg,
                 "picked": True,
             })
 
-            # Create move lines in kg with lots
             lines = self.env["stock.move.line"].create(ml_vals)
             _logger.warning(
                 "    [VRW] after create: line_ids=%s picking_ids=%s",
@@ -198,7 +186,6 @@ class VariableWeightWizard(models.TransientModel):
             all_new_lines |= lines
             _logger.info("    Created %d lines with lots", len(lines))
 
-            # Set quantity to match demand (kg) — _set_quantity finds our lines
             move.quantity = rounded_kg
             _logger.warning(
                 "    [VRW] after move.quantity=%s: via_move=%s picking_ids=%s",
@@ -207,7 +194,6 @@ class VariableWeightWizard(models.TransientModel):
                 move.move_line_ids.mapped("picking_id").ids,
             )
 
-        # Call _action_done on the in-memory recordset directly.
         _logger.info("  Calling _action_done on %d move lines...", len(all_new_lines))
         all_new_lines._action_done()
         _logger.warning(
@@ -216,12 +202,10 @@ class VariableWeightWizard(models.TransientModel):
             all_new_lines.mapped("picking_id").ids,
         )
 
-        # Mark moves and picking done. Everything stays in kg.
         for move in picking.move_ids.filtered(lambda m: m.state not in ("done", "cancel")):
             move.write({"state": "done", "date": fields.Datetime.now()})
         picking.write({"state": "done", "date_done": fields.Datetime.now()})
 
-        # Final hard link — after every path that can drop picking_id
         picking._msa_force_link_move_lines()
         _logger.warning(
             "  [VRW] confirm done: picking.move_line_ids=%s via_move=%s",
