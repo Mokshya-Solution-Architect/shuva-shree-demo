@@ -27,7 +27,7 @@
                             <list editable="bottom" default_order="product_id, sequence">
                                 <field name="product_id" readonly="1" force_save="1"/>
                                 <field name="sequence" string="Unit #" readonly="1"/>
-                                <field name="lot_name" string="Lot / Barcode" force_save="1"/>
+                                <field name="lot_name" readonly="1" string="Lot / Barcode" force_save="1"/>
                                 <field name="weight" string="Actual Weight" force_save="1"/>
                                 <field name="uom_id" string="UoM" readonly="1"
                                     groups="uom.group_uom" force_save="1"
