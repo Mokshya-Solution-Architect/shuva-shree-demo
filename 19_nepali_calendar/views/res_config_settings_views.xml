@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Inherit Settings Form View -->
+        <record id="res_config_settings_view_form" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.nepali.calendar</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="95"/>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="inside">
+                    <app data-string="Nepali Calendar" string="Nepali Calendar" name="nepali_calendar">
+
+                        <!-- Block 1: Enable Features -->
+                        <block title="Nepali Calendar Features" name="nepali_calendar_enable">
+                            <setting string="Enable Nepali Calendar" help="Enable Nepali Calendar (Bikram Sambat) features throughout the system">
+                                <field name="enable_nepali_calendar"/>
+                            </setting>
+
+                            <setting string="Show B.S in Reports" help="Display B.S dates in printed reports and PDF exports" invisible="not enable_nepali_calendar">
+                                <field name="show_bs_in_reports"/>
+                            </setting>
+                        </block>
+
+                        <!-- Block 2: Date Display Settings -->
+                        <block title="Date Display Settings" name="nepali_calendar_date_display" invisible="not enable_nepali_calendar">
+                            <setting string="Date Display Format" help="Choose how date fields should be displayed">
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <label for="nepali_date_format" string="Format"/>
+                                        <field name="nepali_date_format" class="o_light_label" widget="radio"/>
+                                    </div>
+                                    <div class="mt16" invisible="nepali_date_format == 'ad_only'">
+                                        <label for="nepali_date_pattern" string="Pattern" class="o_light_label"/>
+                                        <field name="nepali_date_pattern"/>
+                                    </div>
+                                </div>
+                            </setting>
+
+                            <setting string="DateTime Display Format" help="Choose how datetime fields should be displayed">
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <label for="nepali_datetime_format" string="Format"/>
+                                        <field name="nepali_datetime_format" class="o_light_label" widget="radio"/>
+                                    </div>
+                                </div>
+                            </setting>
+                        </block>
+
+                        <!-- Block 3: Calendar Picker Settings -->
+                        <block title="Calendar Picker Settings" name="nepali_calendar_picker" invisible="not enable_nepali_calendar">
+                            <setting string="Calendar Picker Mode" help="Select which calendar to show in date pickers">
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <label for="nepali_calendar_mode" string="Mode"/>
+                                        <field name="nepali_calendar_mode" class="o_light_label" widget="radio"/>
+                                    </div>
+                                </div>
+                            </setting>
+                        </block>
+
+                        <!-- Information Block -->
+                        <block title="Format Examples" name="nepali_calendar_help" invisible="not enable_nepali_calendar">
+                            <setting>
+                                <div class="alert alert-info" role="alert">
+                                    <h5 class="alert-heading">Date Format Examples:</h5>
+                                    <ul class="mb-0">
+                                        <li><strong>B.S in English:</strong> 2081-08-15 or 2081 Kartik 15</li>
+                                        <li><strong>B.S in Nepali Unicode:</strong> २०८१-०८-१५ or २०८१ कार्तिक १५</li>
+                                        <li><strong>B.S + A.D Combined:</strong> 2081-08-15 (2024-11-27)</li>
+                                    </ul>
+                                    <hr class="my-2"/>
+                                    <p class="mb-0">
+                                        <strong>Note:</strong> These settings will affect how dates are displayed throughout the system.
+                                        The actual data is always stored in A.D. format in the database.
+                                    </p>
+                                </div>
+                            </setting>
+                        </block>
+
+                    </app>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
