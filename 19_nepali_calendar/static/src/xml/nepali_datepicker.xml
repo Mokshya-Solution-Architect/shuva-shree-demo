@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Add toggle button to DateTimeField input -->
+    <t t-name="web.DateTimeField" t-inherit="web.DateTimeField" t-inherit-mode="extension" owl="1">
+        <xpath expr="//div[@t-ref='root']" position="inside">
+            <!-- <button type="button" class="btn btn-sm btn-outline-primary nepali_field_toggle_btn ms-1" title="Toggle Nepali Calendar" t-on-click.stop="toggleNepaliMode">
+                <i class="fa fa-calendar"></i>
+
+            </button> -->
+        </xpath>
+    </t>
+
+    <!-- Override the DateTimePicker template -->
+    <t t-name="web.DateTimePicker" t-inherit="web.DateTimePicker" t-inherit-mode="extension">
+        <!-- Replace the calendar days view when in BS mode -->
+        <xpath expr="//t[@t-if=&quot;state.precision === 'days'&quot;]" position="replace">
+            <t t-if="state.precision === 'days'">
+                <t t-if="nepaliState and nepaliState.isBsMode">
+                    <!-- BS Calendar View -->
+                    <div class="nepali_calendar_container">
+
+
+                        <div class="nepali_calendar_header mb-3">
+                            <div class="nepali_month_year">
+                                <span class="nepali_month_name" t-esc="getMonthName()"></span>
+                                <span class="nepali_year" t-esc="getYear()"></span>
+                                <button type="button" class="btn btn-sm btn-outline-primary" t-on-click="toggleCalendar" title="Switch between BS and AD calendar">
+                                    <i class="fa fa-calendar"></i>
+
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Header with Nepali month/year selectors -->
+                        <div class="nepali_calendar_header mb-3">
+                            <div class="nepali_nav_buttons">
+
+                                <button type="button" class="btn btn-sm btn-light" t-on-click="bsPrevMonth" title="Previous Month" tabindex="-1">
+                                    <i class="fa fa-angle-left"></i>
+                                </button>
+                            </div>
+
+
+                            <div class="nepali_month_year d-flex gap-2">
+                                <!-- Month Selector -->
+                                <select class="form-select form-select-sm" t-on-change="onBsMonthChange" t-att-value="nepaliState.bsMonth">
+                                    <t t-foreach="getMonthOptions()" t-as="month" t-key="month.value">
+                                        <option t-att-value="month.value" t-att-selected="month.value === nepaliState.bsMonth">
+                                            <t t-esc="month.label"/>
+                                        </option>
+                                    </t>
+                                </select>
+
+                                <!-- Year Selector -->
+                                <select class="form-select form-select-sm" t-on-change="onBsYearChange" t-att-value="nepaliState.bsYear">
+                                    <t t-foreach="getYearOptions()" t-as="year" t-key="year">
+                                        <option t-att-value="year" t-att-selected="year === nepaliState.bsYear">
+                                            <t t-esc="nepaliState.useUnicode ? toNepaliNumber(year) : year"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <div class="nepali_nav_buttons">
+                                <button type="button" class="btn btn-sm btn-light" t-on-click="bsNextMonth" title="Next Month" tabindex="-1">
+                                    <i class="fa fa-angle-right"></i>
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <!-- Day names header -->
+                        <div class="nepali_calendar_weekdays">
+                            <t t-foreach="getWeekdayNames()" t-as="weekday" t-key="weekday_index">
+                                <div class="nepali_weekday" t-esc="weekday"></div>
+                            </t>
+                        </div>
+
+                        <!-- Calendar days grid -->
+                        <div class="nepali_calendar_days">
+                            <t t-foreach="nepaliState.calendarDays" t-as="dayInfo" t-key="dayInfo_index">
+                                <div t-att-class="'nepali_calendar_day ' +
+                                        (dayInfo.isCurrentMonth ? 'current_month ' : 'other_month ') +
+                                        (dayInfo.isToday ? 'today ' : '') +
+                                        (dayInfo.isSelected ? 'selected ' : '')" t-on-click="() => this.onBsDayClick(dayInfo)">
+                                    <t t-if="dayInfo.day">
+                                        <span t-esc="dayInfo.displayDay"></span>
+                                    </t>
+                                </div>
+                            </t>
+                        </div>
+
+                        <!-- Footer with formatted date -->
+                        <div class="nepali_calendar_footer mt-3 pt-2 border-top">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted small">
+                                    <i class="fa fa-calendar"></i>
+                                    <t t-esc="getFormattedDate()"></t>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <button type="button" class="btn btn-sm btn-outline-primary text-muted small" t-on-click="toggleCalendar" title="Switch between BS and AD calendar">
+                        <i class="fa fa-calendar"></i>
+
+                    </button>
+                    <!-- Original AD Calendar View -->
+                    <div class="ad_calendar_container">
+                        
+                      
+
+                        <!-- Original DatePicker Days View -->
+                        <t t-call="web.DateTimePicker.Days" />
+                    </div>
+                </t>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

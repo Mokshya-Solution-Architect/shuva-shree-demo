@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- QWeb functions for Nepali dates in reports -->
+    <template id="nepali_date_functions" name="Nepali Date Functions">
+        <!-- These functions can be called from any QWeb report template -->
+
+        <!-- Example usage in your report templates:
+
+        For Date fields:
+        <span t-esc="format_bs_date(o.date_order)"/>
+
+        For DateTime fields:
+        <span t-esc="format_bs_datetime(o.create_date)"/>
+
+        With Unicode (Nepali numerals):
+        <span t-esc="format_bs_date(o.date_order, use_unicode=True)"/>
+
+        With custom format:
+        <span t-esc="format_bs_date(o.date_order, format_str='DD MMMM YYYY')"/>
+        -->
+    </template>
+
+    <!-- Helper to format BS dates in reports -->
+    <template id="report_format_date" name="Format BS Date">
+        <t t-set="format_bs_date" t-value="lambda date_val, format_str='YYYY MMMM DD', use_unicode=False: env['nepali.date.helper'].format_bs_date(date_val, format_str, use_unicode) if date_val else ''"/>
+        <t t-set="format_bs_datetime" t-value="lambda datetime_val, format_str='YYYY MMMM DD', use_unicode=False: env['nepali.date.helper'].format_bs_datetime(datetime_val, format_str, use_unicode) if datetime_val else ''"/>
+    </template>
+</odoo>

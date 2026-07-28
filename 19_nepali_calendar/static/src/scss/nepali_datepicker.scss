@@ -1,0 +1,350 @@
+// Nepali Calendar Styles
+
+// Hide default Odoo datetime picker elements when in BS mode
+.o_datetime_picker:has(.nepali_calendar_container) {
+
+    .o_datetime_picker_header,
+    .o_time_picker_header {
+        display: none !important;
+    }
+}
+
+// BS Mode Header Styling (legacy - kept for backward compatibility)
+.o_datetime_picker_header {
+    &:has(.badge.bg-primary) {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 8px;
+        border-bottom: 2px solid #0d6efd;
+
+        .badge.bg-primary {
+            font-size: 11px;
+            padding: 4px 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .fw-bold {
+            font-size: 16px;
+            color: #0d6efd;
+        }
+    }
+}
+
+// Toggle Button Styling (for field-level toggle)
+.nepali_field_toggle_btn {
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    padding: 4px 8px;
+    height: fit-content;
+    align-self: center;
+
+    &:hover {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+    }
+
+    i {
+        transition: transform 0.3s ease;
+    }
+
+    &:hover i {
+        transform: rotate(180deg);
+    }
+}
+
+.nepali_date_picker {
+    min-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.nepali_calendar_container {
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 4px;
+}
+
+.o_datetime_picker.nepali_date_picker {
+    background-color: #ffffff;
+}
+
+.nepali_date_picker .nepali_calendar_container {
+    background-color: #ffffff;
+}
+
+.nepali_calendar_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+
+    .nepali_nav_buttons {
+        display: flex;
+        gap: 5px;
+
+        button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background-color: #e9ecef;
+                transform: scale(1.1);
+            }
+
+            &:active {
+                transform: scale(0.95);
+            }
+        }
+    }
+
+    .nepali_month_year {
+        font-size: 16px;
+        font-weight: 600;
+        color: #212529;
+        display: flex;
+        justify-content: center;
+        /* horizontally center */
+        align-items: center;
+        /* vertically center */
+        gap: 8px;
+
+        .nepali_month_name {
+            color: #0d6efd;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+    }
+}
+
+.nepali_calendar_weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+
+    .nepali_weekday {
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        padding: 8px 0;
+        text-transform: uppercase;
+    }
+}
+
+.nepali_calendar_days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+
+    .nepali_calendar_day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+
+        &.current_month {
+            color: #212529;
+
+            &:hover {
+                background-color: #e7f3ff;
+                transform: scale(1.1);
+            }
+        }
+
+        &.other_month {
+            color: #dee2e6;
+            cursor: default;
+
+            &:hover {
+                background-color: transparent;
+                transform: none;
+            }
+        }
+
+        &.today {
+            font-weight: 700;
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+
+            &:hover {
+                background-color: #ffe69c;
+            }
+        }
+
+        &.selected {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: 600;
+
+            &:hover {
+                background-color: #0b5ed7;
+            }
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+}
+
+.nepali_calendar_footer {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+
+    .text-muted {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6c757d;
+    }
+
+    button {
+        font-size: 11px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+
+        &:hover {
+            background-color: #6c757d;
+            color: white;
+            border-color: #6c757d;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+        }
+
+        i {
+            transition: transform 0.2s ease;
+        }
+
+        &:hover i {
+            transform: scale(1.1);
+        }
+    }
+}
+
+// Calendar Mode Toggle Header
+.nepali_calendar_container,
+.ad_calendar_container {
+    .border-bottom {
+        border-bottom: 2px solid #e9ecef !important;
+    }
+
+    .btn-outline-primary,
+    .btn-outline-success {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+
+        i {
+            transition: transform 0.3s ease;
+        }
+
+        &:hover i {
+            transform: rotate(180deg);
+        }
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: white !important;
+    }
+
+    .btn-outline-success:hover {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        color: white !important;
+    }
+}
+
+// AD Calendar Container
+.ad_calendar_container {
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 4px;
+
+    >div:first-child {
+        margin-bottom: 15px;
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 576px) {
+    .nepali_calendar_container {
+        padding: 10px;
+    }
+
+    .nepali_calendar_header {
+        .nepali_month_year {
+            font-size: 14px;
+        }
+    }
+
+    .nepali_calendar_days {
+        gap: 3px;
+
+        .nepali_calendar_day {
+            font-size: 13px;
+        }
+    }
+}
+
+// Force light background even in dark mode
+.nepali_calendar_container {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+.o_datetime_picker.nepali_date_picker {
+    background-color: #ffffff !important;
+}
+
+// Animation for calendar switch
+.nepali_date_picker {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

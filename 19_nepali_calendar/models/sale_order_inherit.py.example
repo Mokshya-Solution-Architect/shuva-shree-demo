@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+from odoo import models, fields, api
+
+class SaleOrderBsDate(models.Model):
+    _inherit = 'sale.order'
+
+    date_order_bs = fields.Char(
+        string='Order Date (BS)',
+        compute='_compute_bs_dates',
+        store=False,
+        help='Order date in Bikram Sambat format'
+    )
+
+    create_date_bs = fields.Char(
+        string='Created Date (BS)',
+        compute='_compute_bs_dates',
+        store=False,
+        help='Creation date in Bikram Sambat format'
+    )
+
+    @api.depends('date_order', 'create_date')
+    def _compute_bs_dates(self):
+        """Compute BS format dates for JSON API responses"""
+        helper = self.env['nepali.date.helper']
+
+        for record in self:
+            # Convert order date to BS
+            if record.date_order:
+                record.date_order_bs = helper.format_bs_datetime(record.date_order, 'YYYY MMMM DD', False)
+            else:
+                record.date_order_bs = ''
+
+            # Convert creation date to BS
+            if record.create_date:
+                record.create_date_bs = helper.format_bs_datetime(record.create_date, 'YYYY MMMM DD', False)
+            else:
+                record.create_date_bs = ''
