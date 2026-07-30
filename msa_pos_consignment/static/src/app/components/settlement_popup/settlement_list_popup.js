@@ -56,10 +56,10 @@ export class SettlementListPopup extends Component {
 
     async selectPartner() {
         const currentPartner = this.state.partnerId
-            ? this.pos.models["res.partner"].get(this.state.partnerId)
-            : false;
+            ? this.pos.models["res.partner"].get(this.state.partnerId) ?? null
+            : null;
         const partner = await makeAwaitable(this.dialog, PartnerList, {
-            partner: currentPartner || false,
+            partner: currentPartner,
         });
         if (partner) {
             this.state.partnerId = partner.id;
