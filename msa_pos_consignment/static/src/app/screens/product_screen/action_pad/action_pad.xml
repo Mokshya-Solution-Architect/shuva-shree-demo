@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="msa_pos_consignment.ActionpadWidget"
+       t-inherit="point_of_sale.ActionpadWidget"
+       t-inherit-mode="extension">
+
+        <xpath expr="//div[hasclass('actionpad')]" position="inside">
+            <div t-if="this.pos.cashier._role != 'minimal'"
+                 class="ss-pos-workflow-toolbar d-flex flex-wrap gap-2 order-first w-100">
+                <button t-if="pos.config.enable_consignment"
+                        type="button"
+                        class="btn btn-lg flex-fill py-2 text-truncate"
+                        t-att-class="isDispatchMode ? 'btn-primary' : 'btn-secondary'"
+                        t-on-click="clickConsignmentDispatch">
+                    <i class="fa fa-truck me-1"/>Dispatch
+                </button>
+                <button t-if="pos.config.enable_consignment"
+                        type="button"
+                        class="btn btn-secondary btn-lg flex-fill py-2 text-truncate"
+                        t-on-click="clickConsignmentSettle">
+                    <i class="fa fa-check-circle me-1"/>Settle
+                </button>
+                <button type="button"
+                        class="btn btn-secondary btn-lg flex-fill py-2 text-truncate"
+                        t-on-click="clickExchange">
+                    <i class="fa fa-exchange me-1"/>Exchange
+                </button>
+            </div>
+        </xpath>
+
+        <xpath expr="//div[hasclass('validation')]" position="attributes">
+            <attribute name="t-if">props.showActionButton and !isDispatchMode</attribute>
+        </xpath>
+
+        <xpath expr="//div[hasclass('actionpad')]" position="inside">
+            <div t-if="isDispatchMode"
+                 class="ss-dispatch-confirm d-flex flex-column gap-2 mw-100 w-100 order-last">
+                <div class="d-flex gap-2 ss-dispatch-actions">
+                    <button type="button"
+                            class="btn btn-success btn-lg py-3 flex-fill text-truncate"
+                            t-att-disabled="!currentOrder or currentOrder.isEmpty() or !currentOrder.partner_id"
+                            t-on-click="confirmDispatch">
+                        Confirm Dispatch
+                    </button>
+                    <button type="button"
+                            class="btn btn-secondary btn-lg py-3 flex-shrink-0"
+                            t-on-click="cancelDispatchMode">
+                        Cancel
+                    </button>
+                </div>
+                <div t-if="currentOrder and !currentOrder.partner_id"
+                     class="text-warning text-center small px-1">
+                    Select a distributor with the Customer button first.
+                </div>
+            </div>
+        </xpath>
+
+    </t>
+
+</templates>

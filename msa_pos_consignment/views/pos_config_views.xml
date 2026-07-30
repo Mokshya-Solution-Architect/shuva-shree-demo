@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pos_config_view_form_ss_consignment" model="ir.ui.view">
+        <field name="name">pos.config.form.ss.consignment</field>
+        <field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Consignment Dispatch" name="ss_pos_consignment">
+                    <field name="enable_consignment"/>
+                    <field name="consignment_location_id"
+                           invisible="not enable_consignment"
+                           required="enable_consignment"/>
+                    <field name="consignment_return_location_id"
+                           invisible="not enable_consignment"
+                           required="enable_consignment"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

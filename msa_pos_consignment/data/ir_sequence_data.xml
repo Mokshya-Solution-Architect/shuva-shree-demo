@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_pos_consignment" model="ir.sequence">
+        <field name="name">POS Consignment</field>
+        <field name="code">pos.consignment</field>
+        <field name="prefix">CSG/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pos_consignment_return_lot" model="ir.sequence">
+        <field name="name">POS Consignment Return Lot</field>
+        <field name="code">pos.consignment.return.lot</field>
+        <field name="prefix"></field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

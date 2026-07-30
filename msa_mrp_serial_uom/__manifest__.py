@@ -1,6 +1,6 @@
 {
     'name': "MRP Serial Number by Alternate UOM",
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.3.0',
     'category': 'Manufacturing',
     'summary': "Generate one lot per alternate UOM unit on manufacturing orders",
     'description': """

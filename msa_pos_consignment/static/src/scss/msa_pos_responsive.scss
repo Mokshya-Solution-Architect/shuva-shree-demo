@@ -1,0 +1,149 @@
+// Shared responsive styles for MSA POS consignment / exchange wizards.
+
+.pos {
+    // --- Action pad workflow toolbar ---
+    .ss-pos-workflow-toolbar {
+        .btn {
+            min-height: 2.75rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 575.98px) {
+            flex-direction: column;
+
+            .btn {
+                width: 100%;
+                flex: 1 1 auto !important;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 991.98px) {
+            .btn {
+                flex: 1 1 calc(50% - 0.5rem);
+                min-width: 0;
+                font-size: 0.95rem;
+            }
+        }
+    }
+
+    .ss-dispatch-confirm {
+        @media (max-width: 575.98px) {
+            .ss-dispatch-actions {
+                flex-direction: column;
+
+                .btn {
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    // --- Dialog footers (settlement, exchange, list) ---
+    .ss-pos-dialog-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+
+        .btn {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        @media (max-width: 575.98px) {
+            flex-direction: column;
+
+            .btn {
+                width: 100%;
+            }
+        }
+    }
+
+    // --- Settlement list cards ---
+    .ss-settlement-list {
+        .ss-consignment-card {
+            @media (max-width: 575.98px) {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                text-align: center;
+
+                .btn {
+                    width: 100%;
+                    margin-top: 0.5rem;
+                }
+            }
+        }
+
+        .ss-partner-row {
+            @media (max-width: 575.98px) {
+                flex-direction: column;
+                align-items: stretch !important;
+
+                .btn {
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    // --- Settlement line cards (mobile) ---
+    .ss-settlement-line-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+        padding: 0.75rem;
+        background: var(--bs-body-bg);
+
+        &.ss-unbalanced {
+            border-color: var(--bs-warning);
+            background-color: rgba(var(--bs-warning-rgb), 0.08);
+        }
+
+        .ss-qty-field label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--bs-secondary-color);
+        }
+    }
+
+    // --- Exchange popup ---
+    .ss-exchange-popup {
+        .ss-reason-row {
+            @media (max-width: 575.98px) {
+                flex-direction: column;
+
+                .btn {
+                    width: 100%;
+                }
+            }
+        }
+
+        .ss-qty-grid {
+            @media (max-width: 575.98px) {
+                > [class*="col-"] {
+                    flex: 0 0 100%;
+                    max-width: 100%;
+                }
+            }
+        }
+    }
+
+    // --- Settlement table tweaks on tablet ---
+    .ss-settlement-table {
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            font-size: 0.875rem;
+
+            .input-group-sm .form-control {
+                min-width: 3rem;
+                padding-left: 0.35rem;
+                padding-right: 0.35rem;
+            }
+
+            .input-group-text {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+                font-size: 0.7rem;
+            }
+        }
+    }
+}

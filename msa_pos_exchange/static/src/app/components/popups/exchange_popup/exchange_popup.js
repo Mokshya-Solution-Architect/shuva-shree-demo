@@ -71,6 +71,14 @@ export class ExchangePopup extends Component {
         });
     }
 
+    get isSmallScreen() {
+        return this.pos.isSmallProductScreen;
+    }
+
+    get dialogSize() {
+        return this.isSmallScreen ? "fs" : "md";
+    }
+
     get scrapQty() {
         const returned = parseFloat(this.state.returnedQty) || 0;
         const reusable =

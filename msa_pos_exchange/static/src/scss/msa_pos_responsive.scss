@@ -1,0 +1,19 @@
+// Exchange popup responsive helpers (also covered by msa_pos_consignment when installed).
+.pos .ss-exchange-popup {
+    .ss-reason-row {
+        @media (max-width: 575.98px) {
+            flex-direction: column;
+
+            .btn {
+                width: 100%;
+            }
+        }
+    }
+
+    .ss-qty-grid > [class*="col-"] {
+        @media (max-width: 575.98px) {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+}

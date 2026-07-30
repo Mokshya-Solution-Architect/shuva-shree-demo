@@ -9,8 +9,21 @@ _logger = logging.getLogger(__name__)
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
+    def _msa_is_alt_uom_finished_move(self):
+        """Finished move on an MO whose quantity is expressed in an alternate UOM."""
+        self.ensure_one()
+        production = self.production_id
+        return bool(
+            production
+            and production.product_tracking == 'lot'
+            and self.product_id == production.product_id
+            and production._msa_is_alt_uom_mo()
+        )
+
     def _msa_uses_packaging_tracked_uom(self):
         self.ensure_one()
+        if self._msa_is_alt_uom_finished_move():
+            return True
         return (
             self.product_id.tracking in ('serial', 'lot')
             and self.product_uom
@@ -19,135 +32,120 @@ class StockMove(models.Model):
 
     def _get_packaging_sml_uom_and_qty(self):
         self.ensure_one()
+        base_uom = self.product_id.uom_id
+        if self._msa_is_alt_uom_finished_move():
+            return base_uom.id, self.production_id._msa_alt_uom_factor()
         if self._msa_uses_packaging_tracked_uom():
-            return self.product_uom.id, 1.0
+            return base_uom.id, self.product_uom._compute_quantity(1.0, base_uom)
         if self.product_id.tracking == 'serial':
-            return self.product_id.uom_id.id, 1.0
+            return base_uom.id, 1.0
         return self.product_uom.id, self.quantity
 
+    def _msa_alt_uom_line_count(self, qty):
+        self.ensure_one()
+        if self.production_id.lot_producing_ids:
+            return len(self.production_id.lot_producing_ids)
+        production = self.production_id
+        if production and production._msa_is_alt_uom_mo():
+            return int(production.product_uom_id.round(qty, rounding_method='HALF-UP'))
+        return int(self.product_uom.round(qty, rounding_method='HALF-UP'))
+
+    def _msa_lines_match_alt_uom_lots(self):
+        self.ensure_one()
+        if not self._msa_is_alt_uom_finished_move():
+            return False
+        production = self.production_id
+        lots = production.lot_producing_ids
+        if not lots:
+            return False
+        factor = production._msa_alt_uom_factor()
+        lines = self.move_line_ids
+        return (
+            len(lines) == len(lots)
+            and len(lines.lot_id) == len(lots)
+            and all(
+                production.product_id.uom_id.compare(line.quantity_product_uom, factor) == 0
+                for line in lines
+            )
+        )
+
+    def _prepare_move_line_vals(self, quantity=None, reserved_quant=None):
+        vals = super()._prepare_move_line_vals(quantity, reserved_quant)
+        if (
+            self._msa_is_alt_uom_finished_move()
+            and len(self.production_id.lot_producing_ids) > 1
+        ):
+            vals.pop('lot_id', None)
+        return vals
+
     def _set_lot_ids(self):
-        for move in self:
-            if move.state == 'assigned' and all(ml.lot_id in move.lot_ids for ml in move.move_line_ids):
-                _logger.warning(
-                    "[msa_mrp_serial_uom] _set_lot_ids SKIP | move=%s sml=%s",
-                    move.id,
-                    len(move.move_line_ids),
-                )
-                continue
+        alt_finished = self.filtered(
+            lambda m: m._msa_is_alt_uom_finished_move() and m.lot_ids
+        )
+        for move in alt_finished:
+            if not move._msa_lines_match_alt_uom_lots():
+                move.production_id._msa_sync_finished_move_lots()
 
-            if move.product_id.tracking in ('serial', 'lot') and move._msa_uses_packaging_tracked_uom():
-                sml_uom_id, sml_qty = move._get_packaging_sml_uom_and_qty()
-            elif move.product_id.tracking == 'serial':
-                sml_uom_id, sml_qty = move.product_id.uom_id.id, 1.0
-            else:
-                sml_uom_id = move.product_uom.id
-                sml_qty = move.quantity
+        packaging = self.filtered(
+            lambda m: m not in alt_finished
+            and m.product_id.tracking in ('serial', 'lot')
+            and m._msa_uses_packaging_tracked_uom()
+        )
+        if packaging:
+            self._msa_set_lot_ids_packaging(packaging)
 
-            _logger.warning(
-                "[msa_mrp_serial_uom] _set_lot_ids ENTER | move=%s product=%s tracking=%s "
-                "move.uom=%s sml_uom_id=%s sml_qty=%s lot_count=%s existing_sml=%s",
-                move.id,
-                move.product_id.display_name,
-                move.product_id.tracking,
-                move.product_uom.display_name,
-                sml_uom_id,
-                sml_qty,
-                len(move.lot_ids),
-                len(move.move_line_ids),
-            )
+        standard = self - alt_finished - packaging
+        if standard:
+            super(StockMove, standard)._set_lot_ids()
 
-            move_lines_commands = []
-            mls = move.move_line_ids
-            mls_with_lots = mls.filtered(lambda ml: ml.lot_id)
-            mls_without_lots = mls - mls_with_lots
-            for ml in mls_with_lots:
-                if ml.quantity and ml.lot_id not in move.lot_ids:
-                    move_lines_commands.append(Command.delete(ml.id))
-            ls = move.move_line_ids.lot_id
+    def _msa_set_lot_ids_packaging(self, moves):
+        """Assign lots on tracked moves that use a packaging/alternate UOM."""
+        for move in moves:
+            sml_uom_id, sml_qty = move._get_packaging_sml_uom_and_qty()
+            commands = []
+            free_lines = move.move_line_ids.filtered(lambda ml: not ml.lot_id)
             for lot in move.lot_ids:
-                if lot not in ls:
-                    if mls_without_lots[:1]:
-                        move_line = mls_without_lots[:1]
-                        move_lines_commands.append(Command.update(move_line.id, {
-                            'lot_id': lot.id,
-                            'product_uom_id': sml_uom_id,
-                            'quantity': sml_qty,
-                        }))
-                        mls_without_lots -= move_line
-                    else:
-                        reserved_quants = self.env['stock.quant'].with_context(
-                            packaging_uom_id=move.packaging_uom_id,
-                        )._get_reserve_quantity(move.product_id, move.location_id, 1.0, lot_id=lot)
-                        if reserved_quants and reserved_quants[0][0].lot_id:
-                            move_line_vals = self._prepare_move_line_vals(
-                                quantity=0, reserved_quant=reserved_quants[0][0],
-                            )
-                        else:
-                            move_line_vals = self._prepare_move_line_vals(quantity=0)
-                            move_line_vals['lot_id'] = lot.id
-                        move_line_vals['product_uom_id'] = sml_uom_id
-                        move_line_vals['quantity'] = sml_qty
-                        move_lines_commands.append(Command.create(move_line_vals))
+                existing = move.move_line_ids.filtered(lambda ml: ml.lot_id == lot)
+                if existing:
+                    existing.write({'quantity': sml_qty, 'product_uom_id': sml_uom_id})
+                elif free_lines[:1]:
+                    line = free_lines[:1]
+                    commands.append(Command.update(line.id, {
+                        'lot_id': lot.id,
+                        'product_uom_id': sml_uom_id,
+                        'quantity': sml_qty,
+                    }))
+                    free_lines -= line
                 else:
-                    move_line = move.move_line_ids.filtered(lambda line: line.lot_id.id == lot.id)
-                    if move._msa_uses_packaging_tracked_uom():
-                        move_line.quantity = sml_qty
-                    elif move.product_id.tracking == 'serial':
-                        move_line.quantity = 1
-            move.write({'move_line_ids': move_lines_commands})
-
-            _logger.warning(
-                "[msa_mrp_serial_uom] _set_lot_ids EXIT | move=%s sml=%s with_lot=%s without_lot=%s",
-                move.id,
-                len(move.move_line_ids),
-                len(move.move_line_ids.filtered('lot_id')),
-                len(move.move_line_ids.filtered(lambda l: not l.lot_id)),
-            )
+                    vals = move._prepare_move_line_vals(quantity=0)
+                    vals.update({
+                        'lot_id': lot.id,
+                        'product_uom_id': sml_uom_id,
+                        'quantity': sml_qty,
+                    })
+                    commands.append(Command.create(vals))
+            if commands:
+                move.write({'move_line_ids': commands})
 
     def _set_quantity_done_prepare_vals(self, qty):
         self.ensure_one()
-        if self._msa_uses_packaging_tracked_uom():
-            sml_uom_id, sml_qty = self._get_packaging_sml_uom_and_qty()
-            serial_count = int(self.product_uom.round(qty, rounding_method='HALF-UP'))
-            res = [Command.delete(ml.id) for ml in self.move_line_ids]
-            for _i in range(serial_count):
-                vals = self._prepare_move_line_vals(quantity=0)
-                vals['quantity'] = sml_qty
-                vals['product_uom_id'] = sml_uom_id
-                res.append(Command.create(vals))
-            _logger.warning(
-                "[msa_mrp_serial_uom] _set_quantity_done_prepare_vals PACKAGING | move=%s "
-                "tracking=%s qty=%s uom=%s count=%s",
-                self.id,
-                self.product_id.tracking,
-                qty,
-                self.product_uom.display_name,
-                serial_count,
-            )
-            return res
-        return super()._set_quantity_done_prepare_vals(qty)
+        if not self._msa_uses_packaging_tracked_uom():
+            return super()._set_quantity_done_prepare_vals(qty)
+        sml_uom_id, sml_qty = self._get_packaging_sml_uom_and_qty()
+        line_count = self._msa_alt_uom_line_count(qty)
+        res = [Command.delete(ml.id) for ml in self.move_line_ids]
+        for _i in range(line_count):
+            vals = self._prepare_move_line_vals(quantity=0)
+            vals['quantity'] = sml_qty
+            vals['product_uom_id'] = sml_uom_id
+            res.append(Command.create(vals))
+        return res
 
-    def _set_quantity_done(self, qty):
-        for move in self:
-            if move._msa_uses_packaging_tracked_uom() or move.product_id.tracking == 'serial':
-                _logger.warning(
-                    "[msa_mrp_serial_uom] _set_quantity_done ENTER | move=%s tracking=%s "
-                    "qty=%s uom=%s packaging=%s",
-                    move.id,
-                    move.product_id.tracking,
-                    qty,
-                    move.product_uom.display_name,
-                    move._msa_uses_packaging_tracked_uom(),
-                )
-        result = super()._set_quantity_done(qty)
-        for move in self:
-            if move._msa_uses_packaging_tracked_uom() or move.product_id.tracking == 'serial':
-                _logger.warning(
-                    "[msa_mrp_serial_uom] _set_quantity_done EXIT | move=%s sml=%s "
-                    "with_lot=%s without_lot=%s",
-                    move.id,
-                    len(move.move_line_ids),
-                    len(move.move_line_ids.filtered('lot_id')),
-                    len(move.move_line_ids.filtered(lambda l: not l.lot_id)),
-                )
-        return result
+    def _set_quantity(self):
+        """Keep correct multi-lot lines when core writes MO qty in the wrong UOM."""
+        preserve = self.filtered(lambda m: m._msa_lines_match_alt_uom_lots())
+        process = self - preserve
+        if process:
+            super(StockMove, process)._set_quantity()
+        if preserve:
+            preserve._compute_quantity()

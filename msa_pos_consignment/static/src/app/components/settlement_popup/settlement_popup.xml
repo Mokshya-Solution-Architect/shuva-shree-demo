@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="msa_pos_consignment.SettlementPopup">
+        <Dialog title.translate="Settle Consignment" size="dialogSize" fullscreen="isSmallScreen">
+            <div class="ss-settlement-popup d-flex flex-column gap-3">
+
+                <div t-if="state.error" class="alert alert-danger mb-0" t-esc="state.error"/>
+
+                <div class="alert alert-info mb-0 py-2">
+                    <strong t-esc="consignmentName"/>
+                    — Distributor: <strong t-esc="props.partnerName"/>
+                    <br/>
+                    Enter sold, returned, and scrap quantities in the
+                    <strong>base unit</strong>. Good returns receive a
+                    <strong>new lot</strong> and are resold in a follow-up order.
+                </div>
+
+                <!-- Mobile / narrow: card per line -->
+                <div class="d-md-none d-flex flex-column gap-3">
+                    <t t-foreach="state.lines" t-as="line" t-key="'m-' + line.line_id">
+                        <div t-att-class="'ss-settlement-line-card ' + (lineIsBalanced(line) ? '' : 'ss-unbalanced')">
+                            <div class="fw-semibold mb-1" t-esc="line.product_name"/>
+                            <div class="text-muted small mb-2">
+                                <t t-esc="line.base_uom_name"/>
+                                · <t t-esc="formatAmount(line.price_unit_base)"/> / <t t-esc="line.base_uom_name"/>
+                            </div>
+                            <div class="small mb-2">
+                                <span class="text-muted">Dispatched: </span>
+                                <strong t-esc="formatDispatched(line)"/>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 ss-qty-field">
+                                    <label>Sold</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control text-end"
+                                               min="0" step="any"
+                                               t-att-value="line.qty_sold"
+                                               t-on-input="(ev) => this.onQtyInput(line, 'qty_sold', ev)"
+                                               t-att-disabled="state.busy"/>
+                                        <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                    </div>
+                                </div>
+                                <div class="col-6 ss-qty-field">
+                                    <label>Good Return</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control text-end"
+                                               min="0" step="any"
+                                               t-att-value="line.qty_returned_good"
+                                               t-on-input="(ev) => this.onQtyInput(line, 'qty_returned_good', ev)"
+                                               t-att-disabled="state.busy"/>
+                                        <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                    </div>
+                                </div>
+                                <div class="col-6 ss-qty-field">
+                                    <label>Scrap</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control text-end"
+                                               min="0" step="any"
+                                               t-att-value="line.qty_returned_scrap"
+                                               t-on-input="(ev) => this.onQtyInput(line, 'qty_returned_scrap', ev)"
+                                               t-att-disabled="state.busy"/>
+                                        <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                    </div>
+                                </div>
+                                <div class="col-6 ss-qty-field d-flex flex-column justify-content-end">
+                                    <label>Balance</label>
+                                    <div>
+                                        <span t-att-class="lineIsBalanced(line) ? 'text-success fw-bold' : 'text-danger fw-bold'">
+                                            <t t-esc="lineBalance(line).toFixed(2)"/>
+                                        </span>
+                                        <button t-if="!lineIsBalanced(line)"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-secondary ms-1 py-0 px-1"
+                                                title="Auto-fill Sold from remaining"
+                                                t-on-click="() => this.autoBalance(line)"
+                                                t-att-disabled="state.busy">
+                                            &#x21BA;
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <div class="d-flex justify-content-between fw-bold px-1">
+                        <span>Total to collect</span>
+                        <span t-esc="formatAmount(settlementTotal)"/>
+                    </div>
+                </div>
+
+                <!-- Desktop / tablet landscape: table -->
+                <div class="table-responsive d-none d-md-block ss-settlement-table">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-end">Dispatched</th>
+                                <th class="text-end">Sold</th>
+                                <th class="text-end">Good Return</th>
+                                <th class="text-end">Scrap</th>
+                                <th class="text-end">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.lines" t-as="line" t-key="line.line_id">
+                                <tr t-att-class="lineIsBalanced(line) ? '' : 'table-warning'">
+                                    <td>
+                                        <div class="fw-semibold" t-esc="line.product_name"/>
+                                        <div class="text-muted small">
+                                            <t t-esc="line.base_uom_name"/>
+                                            · <t t-esc="formatAmount(line.price_unit_base)"/> / <t t-esc="line.base_uom_name"/>
+                                        </div>
+                                    </td>
+                                    <td class="text-end align-middle">
+                                        <span class="fw-bold" t-esc="formatDispatched(line)"/>
+                                    </td>
+                                    <td class="text-end p-1">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-end"
+                                                   min="0" step="any"
+                                                   t-att-value="line.qty_sold"
+                                                   t-on-input="(ev) => this.onQtyInput(line, 'qty_sold', ev)"
+                                                   t-att-disabled="state.busy"/>
+                                            <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                        </div>
+                                    </td>
+                                    <td class="text-end p-1">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-end"
+                                                   min="0" step="any"
+                                                   t-att-value="line.qty_returned_good"
+                                                   t-on-input="(ev) => this.onQtyInput(line, 'qty_returned_good', ev)"
+                                                   t-att-disabled="state.busy"/>
+                                            <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                        </div>
+                                    </td>
+                                    <td class="text-end p-1">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-end"
+                                                   min="0" step="any"
+                                                   t-att-value="line.qty_returned_scrap"
+                                                   t-on-input="(ev) => this.onQtyInput(line, 'qty_returned_scrap', ev)"
+                                                   t-att-disabled="state.busy"/>
+                                            <span class="input-group-text px-1 small" t-esc="line.base_uom_name"/>
+                                        </div>
+                                    </td>
+                                    <td class="text-end align-middle">
+                                        <span t-att-class="lineIsBalanced(line) ? 'text-success fw-bold' : 'text-danger fw-bold'">
+                                            <t t-esc="lineBalance(line).toFixed(2)"/>
+                                        </span>
+                                        <button t-if="!lineIsBalanced(line)"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-secondary ms-1 py-0 px-1"
+                                                title="Auto-fill Sold from remaining"
+                                                t-on-click="() => this.autoBalance(line)"
+                                                t-att-disabled="state.busy">
+                                            &#x21BA;
+                                        </button>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="2" class="fw-bold">Total to collect</td>
+                                <td class="text-end fw-bold" colspan="4">
+                                    <t t-esc="formatAmount(settlementTotal)"/>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div t-if="!allBalanced" class="alert alert-warning mb-0 py-2">
+                    Some lines are not balanced (balance must be 0.00).
+                    Adjust the quantities or use the <strong>&#x21BA;</strong> button to auto-fill Sold.
+                </div>
+
+            </div>
+            <t t-set-slot="footer">
+                <div class="ss-pos-dialog-footer">
+                    <button class="btn btn-success btn-lg lh-lg"
+                            t-att-disabled="!canConfirm"
+                            t-on-click="confirm">
+                        <t t-if="state.busy">Processing…</t>
+                        <t t-else="">Confirm Settlement</t>
+                    </button>
+                    <button class="btn btn-secondary btn-lg lh-lg"
+                            t-on-click="cancel"
+                            t-att-disabled="state.busy">
+                        Back
+                    </button>
+                </div>
+            </t>
+        </Dialog>
+    </t>
+</templates>

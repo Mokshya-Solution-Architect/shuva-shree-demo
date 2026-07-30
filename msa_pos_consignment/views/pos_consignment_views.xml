@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_consignment_list" model="ir.ui.view">
+        <field name="name">pos.consignment.list</field>
+        <field name="model">pos.consignment</field>
+        <field name="arch" type="xml">
+            <list string="POS Consignments" decoration-info="state == 'draft'" decoration-success="state == 'settled'" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="dispatch_date"/>
+                <field name="partner_id"/>
+                <field name="config_id"/>
+                <field name="dispatch_session_id"/>
+                <field name="amount_dispatched" widget="monetary"/>
+                <field name="amount_settled" widget="monetary"/>
+                <field name="settlement_order_id"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'dispatched'"
+                       decoration-success="state == 'settled'"
+                       decoration-muted="state == 'cancelled'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_consignment_form" model="ir.ui.view">
+        <field name="name">pos.consignment.form</field>
+        <field name="model">pos.consignment</field>
+        <field name="arch" type="xml">
+            <form string="POS Consignment">
+                <header>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state not in ('draft', 'dispatched')"
+                            confirm="Are you sure you want to cancel this consignment?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,dispatched,settled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Parties">
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="config_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Dates and Sessions">
+                            <field name="dispatch_session_id" readonly="1"/>
+                            <field name="dispatch_date" readonly="1"/>
+                            <field name="settlement_session_id" readonly="1"/>
+                            <field name="settlement_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Amounts">
+                            <field name="amount_dispatched" widget="monetary"/>
+                            <field name="amount_settled" widget="monetary"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Settlement">
+                            <field name="settlement_order_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Dispatch Lines" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="lot_id" string="Dispatch Lot"/>
+                                    <field name="return_lot_id"/>
+                                    <field name="qty_dispatched"/>
+                                    <field name="product_uom_id" string="Dispatch UoM"/>
+                                    <field name="qty_dispatched_base"/>
+                                    <field name="base_uom_id"/>
+                                    <field name="qty_sold"/>
+                                    <field name="qty_returned_good"/>
+                                    <field name="qty_returned_scrap"/>
+                                    <field name="qty_unaccounted"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_unit_base"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Stock Transfers" name="stock">
+                            <group>
+                                <field name="dispatch_picking_id" readonly="1" widget="many2one"/>
+                                <field name="sold_picking_id" readonly="1" widget="many2one"/>
+                                <field name="return_picking_ids" readonly="1" widget="many2many_tags"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" readonly="state != 'draft'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pos_consignment" model="ir.actions.act_window">
+        <field name="name">Consignments</field>
+        <field name="res_model">pos.consignment</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_dispatched': 1}</field>
+    </record>
+
+    <record id="view_pos_consignment_search" model="ir.ui.view">
+        <field name="name">pos.consignment.search</field>
+        <field name="model">pos.consignment</field>
+        <field name="arch" type="xml">
+            <search string="Consignments">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="config_id"/>
+                <filter string="Dispatched" name="dispatched" domain="[('state', '=', 'dispatched')]"/>
+                <filter string="Settled" name="settled" domain="[('state', '=', 'settled')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <filter string="Distributor" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                <filter string="POS" name="group_config" context="{'group_by': 'config_id'}"/>
+                <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <menuitem id="menu_pos_consignment"
+              name="Consignments"
+              parent="point_of_sale.menu_point_of_sale"
+              action="action_pos_consignment"
+              sequence="26"/>
+</odoo>

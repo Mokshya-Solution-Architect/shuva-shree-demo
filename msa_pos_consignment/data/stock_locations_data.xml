@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Re-run on every module upgrade (noupdate=0) so locations stay in sync. -->
+    <function model="stock.warehouse" name="_ss_ensure_consignment_location"/>
+    <function model="pos.config" name="_ss_configure_consignment_defaults"/>
+</odoo>

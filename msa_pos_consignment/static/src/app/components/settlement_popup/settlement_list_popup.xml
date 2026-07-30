@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="msa_pos_consignment.SettlementListPopup">
+        <Dialog title.translate="Open Consignments" size="dialogSize" fullscreen="isSmallScreen">
+            <div class="ss-settlement-list d-flex flex-column gap-3">
+
+                <div t-if="state.error" class="alert alert-danger mb-0" t-esc="state.error"/>
+
+                <div>
+                    <label class="form-label fw-bold">Distributor</label>
+                    <div class="d-flex gap-2 align-items-center ss-partner-row">
+                        <span t-if="state.partnerName" class="flex-fill fs-5 fw-semibold text-break"
+                              t-esc="state.partnerName"/>
+                        <span t-else="" class="flex-fill text-muted fst-italic">
+                            No distributor selected
+                        </span>
+                        <button type="button" class="btn btn-outline-primary flex-shrink-0"
+                                t-on-click="() => this.selectPartner()">
+                            Select
+                        </button>
+                    </div>
+                </div>
+
+                <div t-if="state.loading" class="text-center text-muted py-3">
+                    Loading open consignments…
+                </div>
+
+                <div t-elif="state.partnerId and !hasConsignments and !state.loading"
+                     class="alert alert-info mb-0">
+                    No open consignments found for this distributor.
+                </div>
+
+                <div t-elif="hasConsignments" class="d-flex flex-column gap-2">
+                    <div t-foreach="state.consignments" t-as="c" t-key="c.id"
+                         class="card card-body p-3 d-flex flex-row flex-sm-row align-items-center justify-content-between gap-3 ss-consignment-card">
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="fw-bold text-break" t-esc="c.name"/>
+                            <div class="text-muted small">
+                                Dispatched: <t t-esc="formatDate(c.dispatch_date)"/>
+                            </div>
+                            <div class="small">
+                                <span class="badge bg-warning text-dark">
+                                    <t t-esc="c.lines.length"/> product(s)
+                                </span>
+                                <span class="ms-2" t-esc="formatAmount(c.amount_dispatched)"/>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary flex-shrink-0"
+                                t-on-click="() => this.openSettlement(c)">
+                            Settle
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            <t t-set-slot="footer">
+                <div class="ss-pos-dialog-footer">
+                    <button class="btn btn-secondary btn-lg lh-lg" t-on-click="cancel">
+                        Close
+                    </button>
+                </div>
+            </t>
+        </Dialog>
+    </t>
+</templates>
