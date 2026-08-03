@@ -60,6 +60,10 @@ export async function createConsignmentResaleOrder(pos, result) {
             line.consignment_return_lot_id = resaleLine.lot_id;
         }
         if (resaleLine.lot_name && product.tracking !== "none") {
+            // Persist lot name on the order line itself so it survives IndexedDB
+            // reload before the server sync completes (pos.pack.operation.lot is
+            // not stored in IndexedDB; this field is the stable fallback).
+            line.consignment_return_lot_name = resaleLine.lot_name;
             line.setPackLotLines({
                 modifiedPackLotLines: {},
                 newPackLotLines: [{ lot_name: resaleLine.lot_name }],
@@ -76,10 +80,43 @@ export async function createConsignmentResaleOrder(pos, result) {
     return newOrder;
 }
 
+/**
+ * After all POS data is loaded (server + IndexedDB), rebuild missing
+ * pack_lot_ids for consignment return lines.
+ *
+ * pos.pack.operation.lot is NOT in IndexedDB's databaseTable, so it is
+ * lost on a reload that happens before the order syncs to the server.
+ * The consignment_return_lot_name field on pos.order.line IS in IndexedDB
+ * (order lines are persisted there), giving us a reliable fallback.
+ */
+function restoreConsignmentReturnLots(pos) {
+    const draftOrders = pos.models["pos.order"].filter((o) => o.state === "draft");
+    for (const order of draftOrders) {
+        for (const line of order.lines || []) {
+            if (
+                line.is_consignment_return &&
+                line.consignment_return_lot_name &&
+                !(line.pack_lot_ids && line.pack_lot_ids.length)
+            ) {
+                pos.models["pos.pack.operation.lot"].create({
+                    lot_name: line.consignment_return_lot_name,
+                    pos_order_line_id: line,
+                });
+                logConsignment("restoreConsignmentReturnLots", "restored pack lot", {
+                    order: order.name,
+                    lot: line.consignment_return_lot_name,
+                });
+            }
+        }
+    }
+}
+
 patch(PosStore.prototype, {
     async setup(env, deps) {
         const result = await super.setup(env, deps);
         this.pendingConsignmentResale = null;
+        // Rebuild any pack_lot_ids lost from IndexedDB across sessions.
+        restoreConsignmentReturnLots(this);
         logConsignment("PosStore.setup", "POS store ready", snapshotPosContext(this));
         if (navigator.serviceWorker) {
             navigator.serviceWorker.getRegistration("/pos/service-worker.js").then((reg) => {
