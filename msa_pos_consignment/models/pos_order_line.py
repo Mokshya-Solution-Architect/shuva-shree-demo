@@ -32,7 +32,6 @@ class PosOrderLine(models.Model):
         fields_list = super()._load_pos_data_fields(config)
         for fname in (
             'is_consignment_return',
-            'consignment_return_lot_id',
             'consignment_return_lot_name',
         ):
             if fname not in fields_list:

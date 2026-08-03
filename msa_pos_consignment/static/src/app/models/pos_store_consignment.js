@@ -4,11 +4,11 @@ import { patch } from "@web/core/utils/patch";
 import { PosStore } from "@point_of_sale/app/services/pos_store";
 import OrderPaymentValidation from "@point_of_sale/app/utils/order_payment_validation";
 import { _t } from "@web/core/l10n/translation";
+import { logConsignment, snapshotOrder, snapshotPosContext } from "@msa_pos_consignment/app/utils/consignment_debug";
 import {
-    logConsignment,
-    snapshotOrder,
-    snapshotPosContext,
-} from "@msa_pos_consignment/app/utils/consignment_debug";
+    getLineLotName,
+    isConsignmentReturnLine,
+} from "@msa_pos_consignment/app/utils/dispatch_lines";
 
 /**
  * After settlement payment, open a resale order pre-filled with good-return
@@ -29,6 +29,9 @@ export async function createConsignmentResaleOrder(pos, result) {
         }
     }
     newOrder.is_consignment_resale = true;
+    if (newOrder.uiState) {
+        newOrder.uiState.is_consignment_dispatch = true;
+    }
     if (result.consignment_id) {
         const consignment = pos.models["pos.consignment"]?.get(result.consignment_id);
         newOrder.consignment_id = consignment || result.consignment_id;
@@ -57,12 +60,9 @@ export async function createConsignmentResaleOrder(pos, result) {
         }
         line.is_consignment_return = true;
         if (resaleLine.lot_id) {
-            line.consignment_return_lot_id = resaleLine.lot_id;
+            line.consignmentReturnLotDbId = resaleLine.lot_id;
         }
         if (resaleLine.lot_name && product.tracking !== "none") {
-            // Persist lot name on the order line itself so it survives IndexedDB
-            // reload before the server sync completes (pos.pack.operation.lot is
-            // not stored in IndexedDB; this field is the stable fallback).
             line.consignment_return_lot_name = resaleLine.lot_name;
             line.setPackLotLines({
                 modifiedPackLotLines: {},
@@ -81,32 +81,28 @@ export async function createConsignmentResaleOrder(pos, result) {
 }
 
 /**
- * After all POS data is loaded (server + IndexedDB), rebuild missing
- * pack_lot_ids for consignment return lines.
- *
- * pos.pack.operation.lot is NOT in IndexedDB's databaseTable, so it is
- * lost on a reload that happens before the order syncs to the server.
- * The consignment_return_lot_name field on pos.order.line IS in IndexedDB
- * (order lines are persisted there), giving us a reliable fallback.
+ * Repair return-line flags / pack lots for one order (e.g. drafts from before
+ * is_consignment_return was persisted). Called at dispatch time only — not on
+ * every POS boot, to avoid slowing session open.
  */
-function restoreConsignmentReturnLots(pos) {
-    const draftOrders = pos.models["pos.order"].filter((o) => o.state === "draft");
-    for (const order of draftOrders) {
-        for (const line of order.lines || []) {
-            if (
-                line.is_consignment_return &&
-                line.consignment_return_lot_name &&
-                !(line.pack_lot_ids && line.pack_lot_ids.length)
-            ) {
-                pos.models["pos.pack.operation.lot"].create({
-                    lot_name: line.consignment_return_lot_name,
-                    pos_order_line_id: line,
-                });
-                logConsignment("restoreConsignmentReturnLots", "restored pack lot", {
-                    order: order.name,
-                    lot: line.consignment_return_lot_name,
-                });
-            }
+export function healConsignmentReturnLinesForOrder(pos, order) {
+    if (!order) {
+        return;
+    }
+    for (const line of order.lines || []) {
+        if (!isConsignmentReturnLine(line, order)) {
+            continue;
+        }
+        line.is_consignment_return = true;
+        const lotName = getLineLotName(line);
+        if (lotName && !line.consignment_return_lot_name) {
+            line.consignment_return_lot_name = lotName;
+        }
+        if (lotName && !(line.pack_lot_ids && line.pack_lot_ids.length)) {
+            pos.models["pos.pack.operation.lot"].create({
+                lot_name: lotName,
+                pos_order_line_id: line,
+            });
         }
     }
 }
@@ -115,62 +111,16 @@ patch(PosStore.prototype, {
     async setup(env, deps) {
         const result = await super.setup(env, deps);
         this.pendingConsignmentResale = null;
-        // Rebuild any pack_lot_ids lost from IndexedDB across sessions.
-        restoreConsignmentReturnLots(this);
-        logConsignment("PosStore.setup", "POS store ready", snapshotPosContext(this));
-        if (navigator.serviceWorker) {
-            navigator.serviceWorker.getRegistration("/pos/service-worker.js").then((reg) => {
-                logConsignment("PosStore.setup", "service worker state", {
-                    registered: Boolean(reg),
-                    active: Boolean(reg?.active),
-                    waiting: Boolean(reg?.waiting),
-                    installing: Boolean(reg?.installing),
-                    scope: reg?.scope ?? null,
-                });
-            });
+
+        // Restore pack_lot_ids for consignment return lines on every boot.
+        // pos.pack.operation.lot records are in-memory only — not stored in
+        // IndexedDB — so they vanish on reload. consignment_return_lot_name IS
+        // a real DB field on pos.order.line, so we rebuild lot entries from it.
+        for (const order of this.models["pos.order"].getAll()) {
+            healConsignmentReturnLinesForOrder(this, order);
         }
+
         return result;
-    },
-
-    navigate(routeName, routeParams = {}) {
-        logConsignment("PosStore.navigate", "BEFORE", {
-            routeName,
-            routeParams,
-            pathname: window.location.pathname,
-            context: snapshotPosContext(this),
-            order: snapshotOrder(this.getOrder()),
-        });
-        const result = super.navigate(routeName, routeParams);
-        logConsignment("PosStore.navigate", "AFTER", {
-            routeName,
-            routeParams,
-            pathname: window.location.pathname,
-            context: snapshotPosContext(this),
-            order: snapshotOrder(this.getOrder()),
-        });
-        return result;
-    },
-
-    addNewOrder(data = {}) {
-        logConsignment("PosStore.addNewOrder", "BEFORE", {
-            data,
-            context: snapshotPosContext(this),
-        });
-        const order = super.addNewOrder(data);
-        logConsignment("PosStore.addNewOrder", "AFTER", {
-            order: snapshotOrder(order),
-            context: snapshotPosContext(this),
-        });
-        return order;
-    },
-
-    setOrder(order) {
-        logConsignment("PosStore.setOrder", "switch", {
-            from: snapshotOrder(this.getOrder()),
-            to: snapshotOrder(order),
-            pathname: window.location.pathname,
-        });
-        return super.setOrder(order);
     },
 });
 
@@ -179,15 +129,12 @@ patch(OrderPaymentValidation.prototype, {
         await super.afterOrderValidation(...arguments);
         const order = this.order;
         const pending = this.pos.pendingConsignmentResale;
-        if (
-            order?.is_consignment_settlement &&
-            pending?.resale_lines?.length
-        ) {
+        if (order?.is_consignment_settlement && pending?.resale_lines?.length) {
             this.pos.pendingConsignmentResale = null;
             await createConsignmentResaleOrder(this.pos, pending);
             this.pos.notification.add(
                 _t(
-                    "Good-return stock loaded — add fresh products if needed, then collect resale payment."
+                    "Good-return stock loaded — add fresh warehouse products if needed, then confirm dispatch."
                 ),
                 { type: "info" }
             );
@@ -195,16 +142,3 @@ patch(OrderPaymentValidation.prototype, {
         }
     },
 });
-
-if (typeof window !== "undefined") {
-    logConsignment("boot", "module loaded", {
-        pathname: window.location.pathname,
-        href: window.location.href,
-        online: navigator.onLine,
-    });
-    window.addEventListener("beforeunload", () => {
-        logConsignment("boot", "page beforeunload", {
-            pathname: window.location.pathname,
-        });
-    });
-}

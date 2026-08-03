@@ -154,7 +154,7 @@ export class SettlementPopup extends Component {
                 await createConsignmentResaleOrder(this.pos, result);
                 this.notification.add(
                     _t(
-                        "Settlement %(ref)s complete — good-return stock loaded. Add fresh products if needed, then collect payment.",
+                        "Settlement %(ref)s complete — good-return stock loaded. Add fresh warehouse products if needed, then confirm dispatch.",
                         { ref: result.consignment_name }
                     ),
                     { type: "success" }

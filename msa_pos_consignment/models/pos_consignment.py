@@ -276,12 +276,18 @@ class PosConsignment(models.Model):
                     'Check the UoM conversion factors.',
                     product.display_name, product.uom_id.display_name,
                 ))
+            from_return_staging = bool(ld.get('is_consignment_return'))
+            if not from_return_staging and lot:
+                from_return_staging = self._line_from_return_staging(
+                    config, product, lot, qty_base,
+                )
             line_commands.append(Command.create({
                 'product_id': product.id,
                 'lot_id': lot.id if lot else False,
                 'product_uom_id': uom.id,
                 'qty_dispatched': qty,
                 'price_unit': price_unit,
+                'from_return_staging': from_return_staging,
             }))
 
         consignment = self.create({
@@ -437,6 +443,37 @@ class PosConsignment(models.Model):
     # Internal dispatch & settlement logic
     # -------------------------------------------------------------------------
 
+    def _line_from_return_staging(self, config, product, lot, qty_base):
+        """True when stock for this lot/qty should come from Consignment Returns.
+
+        Handles POS lines created before ``is_consignment_return`` was sent from
+        the frontend — infer from where the lot actually has available quantity.
+        """
+        return_loc = config.consignment_return_location_id
+        if not return_loc or not lot:
+            return False
+        warehouse_src = (
+            config.picking_type_id.default_location_src_id
+            or config.warehouse_id.lot_stock_id
+        )
+        rounding = product.uom_id.rounding
+        avail_return = self.env['stock.quant']._get_available_quantity(
+            product, return_loc,
+            lot_id=lot,
+            strict=True,
+        )
+        if float_compare(avail_return, qty_base, precision_rounding=rounding) < 0:
+            return False
+        if warehouse_src:
+            avail_wh = self.env['stock.quant']._get_available_quantity(
+                product, warehouse_src,
+                lot_id=lot,
+                strict=True,
+            )
+            if float_compare(avail_wh, qty_base, precision_rounding=rounding) >= 0:
+                return False
+        return True
+
     def _confirm_dispatch(self):
         """Create the outbound dispatch picking and transition to Dispatched."""
         self.ensure_one()
@@ -574,49 +611,73 @@ class PosConsignment(models.Model):
         return config.picking_type_id.default_location_src_id or config.warehouse_id.lot_stock_id
 
     def _create_dispatch_picking(self):
-        """Warehouse stock → Consignment Transit (immediate)."""
+        """Move dispatched stock to Consignment Transit.
+
+        Warehouse lines: WH/Stock → Transit.
+        Good-return restaging lines: Consignment Returns → Transit.
+        Creates one picking per source location when both are present.
+        """
         self.ensure_one()
         config = self.dispatch_session_id.config_id
         picking_type = config.picking_type_id
-        src_location = self._warehouse_stock_location()
         dest_location = self._consignment_location()
+        warehouse_src = self._warehouse_stock_location()
+        return_src = self._consignment_return_location()
 
-        picking = self.env['stock.picking'].create({
-            'picking_type_id': picking_type.id,
-            'location_id': src_location.id,
-            'location_dest_id': dest_location.id,
-            'partner_id': self.partner_id.id,
-            'origin': self.name,
-            'company_id': self.company_id.id,
-            'pos_session_id': self.dispatch_session_id.id,
-            'move_type': 'direct',
-        })
-        moves = self.env['stock.move']
-        for line in self.line_ids:
-            base_uom = line.base_uom_id or line.product_id.uom_id
-            move = self._create_stock_move(
-                picking=picking,
-                product=line.product_id,
-                qty=line.qty_dispatched_base,
-                uom=base_uom,
-                lot=line.lot_id,
-                src=src_location,
-                dest=dest_location,
-                require_stock=True,
-                auto_confirm=False,
-            )
-            if move:
-                moves |= move
-        if moves:
-            moves._action_confirm(merge=False)
-            moves._action_assign()
-            moves.picked = True
-        picking.with_context(skip_sms=True, cancel_backorder=True)._action_done()
-        if picking.state != 'done':
-            raise UserError(_(
-                'Could not complete dispatch transfer for %s.', self.name
-            ))
-        return picking
+        line_groups = [
+            (warehouse_src, self.line_ids.filtered(lambda l: not l.from_return_staging)),
+            (return_src, self.line_ids.filtered(lambda l: l.from_return_staging)),
+        ]
+
+        pickings = self.env['stock.picking']
+        for src_location, lines in line_groups:
+            if not lines:
+                continue
+            picking = self.env['stock.picking'].create({
+                'picking_type_id': picking_type.id,
+                'location_id': src_location.id,
+                'location_dest_id': dest_location.id,
+                'partner_id': self.partner_id.id,
+                'origin': self.name,
+                'company_id': self.company_id.id,
+                'pos_session_id': self.dispatch_session_id.id,
+                'move_type': 'direct',
+            })
+            moves = self.env['stock.move']
+            for line in lines:
+                base_uom = line.base_uom_id or line.product_id.uom_id
+                move = self._create_stock_move(
+                    picking=picking,
+                    product=line.product_id,
+                    qty=line.qty_dispatched_base,
+                    uom=base_uom,
+                    lot=line.lot_id,
+                    src=src_location,
+                    dest=dest_location,
+                    require_stock=True,
+                    auto_confirm=False,
+                )
+                if move:
+                    moves |= move
+            if moves:
+                moves._action_confirm(merge=False)
+                moves._action_assign()
+                moves.picked = True
+            picking.with_context(skip_sms=True, cancel_backorder=True)._action_done()
+            if picking.state != 'done':
+                raise UserError(_(
+                    'Could not complete dispatch transfer for %s.', self.name
+                ))
+            pickings |= picking
+
+        if not pickings:
+            raise UserError(_('No dispatch transfers were created for %s.', self.name))
+
+        # Primary picking for backward compatibility (warehouse first if present).
+        primary = pickings.filtered(
+            lambda p: p.location_id == warehouse_src
+        )[:1] or pickings[:1]
+        return primary
 
     def _process_settlement(self, session, line_updates):
         """Execute all settlement stock moves and update consignment state.
@@ -911,6 +972,12 @@ class PosConsignmentLine(models.Model):
         ondelete='restrict',
         copy=False,
         help='New lot assigned to loose good-return pieces at settlement.',
+    )
+    from_return_staging = fields.Boolean(
+        string='From Returns Staging',
+        default=False,
+        copy=False,
+        help='Stock for this line is taken from Consignment Returns staging, not warehouse stock.',
     )
     product_uom_id = fields.Many2one(
         'uom.uom',

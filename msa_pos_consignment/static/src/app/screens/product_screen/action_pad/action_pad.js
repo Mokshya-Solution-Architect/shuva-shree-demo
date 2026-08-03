@@ -17,6 +17,7 @@ import {
     buildDispatchLinesFromOrder,
     validateDispatchOrderLines,
 } from "@msa_pos_consignment/app/utils/dispatch_lines";
+import { healConsignmentReturnLinesForOrder } from "@msa_pos_consignment/app/models/pos_store_consignment";
 
 patch(ActionpadWidget.prototype, {
     setup() {
@@ -95,6 +96,8 @@ patch(ActionpadWidget.prototype, {
             this.notification.add(lotError, { type: "warning" });
             return;
         }
+
+        healConsignmentReturnLinesForOrder(this.pos, order);
 
         const rpcPayload = {
             session_id: this.pos.session.id,

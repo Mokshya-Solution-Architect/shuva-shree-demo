@@ -9,13 +9,9 @@ const DEBUG_KEY = "msa_pos_consignment_debug";
 
 export function isConsignmentDebugEnabled() {
     try {
-        const v = localStorage.getItem(DEBUG_KEY);
-        if (v === "0") {
-            return false;
-        }
-        return true;
+        return localStorage.getItem(DEBUG_KEY) === "1";
     } catch {
-        return true;
+        return false;
     }
 }
 
